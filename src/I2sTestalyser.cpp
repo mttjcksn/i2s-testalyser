@@ -142,11 +142,31 @@ void I2sTestalyser::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subfr
         }
     }
 
+    static U64 expectedResult0 = 0;
+    static U64 expectedResult1 = 1;
+    if( mSettings->mTestMode == TestMode::TEST_CONTIGUOUS )
+    {
+        if( result != (subframe_index ? expectedResult1 : expectedResult0))
+        {
+            Frame frame;
+            frame.mType = U8( TestError );
+            frame.mFlags = DISPLAY_AS_ERROR_FLAG;
+            frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
+            frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
+            mResults->AddFrame( frame );
+            FrameV2 frame_v2;
+            frame_v2.AddString( "error", "Not contiguous!" );
+            mResults->AddFrameV2( frame_v2, "error", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
+            subframe_index ? expectedResult1+=2 : expectedResult0+=2;
+            return;
+        }
+        subframe_index ? expectedResult1++ : expectedResult0++;
+    }
+
     // enum I2sResultType { Channel1, Channel2, ErrorTooFewBits, ErrorDoesntDivideEvenly };
     // add result bubble
     Frame frame;
     frame.mData1 = result;
-
 
     U32 channel_1_polarity = 1;
     if( mSettings->mWordSelectInverted == WS_INVERTED )
@@ -160,6 +180,7 @@ void I2sTestalyser::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subfr
     frame.mFlags = 0;
     frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
     frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
+
     mResults->AddFrame( frame );
     FrameV2 frame_v2;
     frame_v2.AddInteger( "channel", frame.mType );

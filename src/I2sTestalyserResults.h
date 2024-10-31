@@ -11,7 +11,8 @@ enum I2sResultType
     Channel1,
     Channel2,
     ErrorTooFewBits,
-    ErrorDoesntDivideEvenly
+    ErrorDoesntDivideEvenly,
+    TestError
 };
 
 

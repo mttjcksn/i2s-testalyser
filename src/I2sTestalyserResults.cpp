@@ -84,6 +84,14 @@ void I2sTestalyserResults::GenerateBubbleText( U64 frame_index, Channel& /*chann
         AddResultString( "Error: bits don't divide evenly between subframes" );
     }
     break;
+    case TestError:
+    {
+        AddResultString( "!" );
+        AddResultString( "Error" );
+        AddResultString( "Error: Test error" );
+        AddResultString( "Error: Test error" );
+    }
+    break;
     }
 }
 
@@ -214,6 +222,11 @@ void I2sTestalyserResults::GenerateFrameTabularText( U64 frame_index, DisplayBas
     case ErrorDoesntDivideEvenly:
     {
         AddTabularText( "Error: bits don't divide evenly between subframes" );
+    }
+    break;
+    case TestError:
+    {
+        AddTabularText( "Error: Test error" );
     }
     break;
     }
