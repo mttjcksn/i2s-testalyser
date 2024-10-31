@@ -3,8 +3,8 @@
 
 #include <AnalyzerResults.h>
 
-class I2sAnalyzer;
-class I2sAnalyzerSettings;
+class I2sTestalyser;
+class I2sTestalyserSettings;
 
 enum I2sResultType
 {
@@ -15,11 +15,11 @@ enum I2sResultType
 };
 
 
-class I2sAnalyzerResults : public AnalyzerResults
+class I2sTestalyserResults : public AnalyzerResults
 {
   public:
-    I2sAnalyzerResults( I2sAnalyzer* analyzer, I2sAnalyzerSettings* settings );
-    virtual ~I2sAnalyzerResults();
+    I2sTestalyserResults( I2sTestalyser* analyzer, I2sTestalyserSettings* settings );
+    virtual ~I2sTestalyserResults();
 
     virtual void GenerateBubbleText( U64 frame_index, Channel& channel, DisplayBase display_base );
     virtual void GenerateExportFile( const char* file, DisplayBase display_base, U32 export_type_user_id );
@@ -30,8 +30,8 @@ class I2sAnalyzerResults : public AnalyzerResults
 
   protected: // functions
   protected: // vars
-    I2sAnalyzerSettings* mSettings;
-    I2sAnalyzer* mAnalyzer;
+    I2sTestalyserSettings* mSettings;
+    I2sTestalyser* mAnalyzer;
 };
 
 #endif // I2S_ANALYZER_RESULTS

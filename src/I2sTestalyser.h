@@ -2,15 +2,15 @@
 #define I2S_ANALYZER_H
 
 #include <Analyzer.h>
-#include "I2sAnalyzerResults.h"
+#include "I2sTestalyserResults.h"
 #include "I2sSimulationDataGenerator.h"
 
-class I2sAnalyzerSettings;
-class I2sAnalyzer : public Analyzer2
+class I2sTestalyserSettings;
+class I2sTestalyser : public Analyzer2
 {
   public:
-    I2sAnalyzer();
-    virtual ~I2sAnalyzer();
+    I2sTestalyser();
+    virtual ~I2sTestalyser();
     virtual void SetupResults();
     virtual void WorkerThread();
 
@@ -22,7 +22,7 @@ class I2sAnalyzer : public Analyzer2
 
 #pragma warning( push )
 #pragma warning(                                                                                                                           \
-    disable : 4251 ) // warning C4251: 'I2sAnalyzer::<...>' : class <...> needs to have dll-interface to be used by clients of class
+    disable : 4251 ) // warning C4251: 'I2sTestalyser::<...>' : class <...> needs to have dll-interface to be used by clients of class
 
   protected: // functions
     void AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subframe_index );
@@ -33,10 +33,10 @@ class I2sAnalyzer : public Analyzer2
     void GetNextBit( BitState& data, BitState& frame, U64& sample_number );
 
   protected:
-    std::auto_ptr<I2sAnalyzerSettings> mSettings;
-    std::auto_ptr<I2sAnalyzerResults> mResults;
+    std::auto_ptr<I2sTestalyserSettings> mSettings;
+    std::auto_ptr<I2sTestalyserResults> mResults;
     bool mSimulationInitilized;
-    I2sSimulationDataGenerator mSimulationDataGenerator;
+    I2sSimulationTestDataGenerator mSimulationDataGenerator;
 
     AnalyzerChannelData* mClock;
     AnalyzerChannelData* mFrame;

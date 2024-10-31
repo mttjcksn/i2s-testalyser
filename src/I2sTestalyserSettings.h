@@ -1,5 +1,4 @@
-#ifndef I2S_ANALYZER_SETTINGS
-#define I2S_ANALYZER_SETTINGS
+#pragma once
 
 #include <AnalyzerSettings.h>
 #include <AnalyzerTypes.h>
@@ -25,15 +24,19 @@ enum PcmWordSelectInverted
     WS_INVERTED,
     WS_NOT_INVERTED
 };
+enum TestMode
+{
+    TEST_DISABLED,
+    TEST_CONTIGUOUS
+};
 
-class I2sAnalyzerSettings : public AnalyzerSettings
+class I2sTestalyserSettings : public AnalyzerSettings
 {
   public:
-    I2sAnalyzerSettings();
-    virtual ~I2sAnalyzerSettings();
+    I2sTestalyserSettings();
+    virtual ~I2sTestalyserSettings();
 
-    virtual bool
-    SetSettingsFromInterfaces(); // Get the settings out of the interfaces, validate them, and save them to your local settings vars.
+    virtual bool SetSettingsFromInterfaces(); // Get the settings out of the interfaces, validate them, and save them to your local settings vars.
     virtual void LoadSettings( const char* settings ); // Load your settings from a string.
     virtual const char* SaveSettings();                // Save your settings to a string.
 
@@ -52,8 +55,9 @@ class I2sAnalyzerSettings : public AnalyzerSettings
     PcmBitAlignment mBitAlignment;
     AnalyzerEnums::Sign mSigned;
 
-
     PcmWordSelectInverted mWordSelectInverted;
+
+    TestMode mTestMode;
 
   protected:
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mClockChannelInterface;
@@ -71,5 +75,6 @@ class I2sAnalyzerSettings : public AnalyzerSettings
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mSignedInterface;
 
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mWordSelectInvertedInterface;
+
+    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mTestModeInterface;
 };
-#endif // I2S_ANALYZER_SETTINGS

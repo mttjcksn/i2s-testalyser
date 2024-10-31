@@ -1,7 +1,7 @@
 #ifndef I2S_SIMULATION_DATA_GENERATOR
 #define I2S_SIMULATION_DATA_GENERATOR
 
-#include "I2sAnalyzerSettings.h"
+#include "I2sTestalyserSettings.h"
 #include "AnalyzerHelpers.h"
 
 enum RightLeftDirection
@@ -17,17 +17,17 @@ enum BitGenerarionState
     RightPadding
 };
 
-class I2sSimulationDataGenerator
+class I2sSimulationTestDataGenerator
 {
   public:
-    I2sSimulationDataGenerator();
-    ~I2sSimulationDataGenerator();
+    I2sSimulationTestDataGenerator();
+    ~I2sSimulationTestDataGenerator();
 
-    void Initialize( U32 simulation_sample_rate, I2sAnalyzerSettings* settings );
+    void Initialize( U32 simulation_sample_rate, I2sTestalyserSettings* settings );
     U32 GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels );
 
   protected:
-    I2sAnalyzerSettings* mSettings;
+    I2sTestalyserSettings* mSettings;
     U32 mSimulationSampleRateHz;
 
     SimulationChannelDescriptorGroup mSimulationChannels;

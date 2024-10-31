@@ -1,7 +1,7 @@
-#include "I2sAnalyzerResults.h"
+#include "I2sTestalyserResults.h"
 #include <AnalyzerHelpers.h>
-#include "I2sAnalyzer.h"
-#include "I2sAnalyzerSettings.h"
+#include "I2sTestalyser.h"
+#include "I2sTestalyserSettings.h"
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
@@ -10,16 +10,16 @@
 #pragma warning( disable : 4996 ) // warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
 
 
-I2sAnalyzerResults::I2sAnalyzerResults( I2sAnalyzer* analyzer, I2sAnalyzerSettings* settings )
+I2sTestalyserResults::I2sTestalyserResults( I2sTestalyser* analyzer, I2sTestalyserSettings* settings )
     : AnalyzerResults(), mSettings( settings ), mAnalyzer( analyzer )
 {
 }
 
-I2sAnalyzerResults::~I2sAnalyzerResults()
+I2sTestalyserResults::~I2sTestalyserResults()
 {
 }
 
-void I2sAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& /*channel*/,
+void I2sTestalyserResults::GenerateBubbleText( U64 frame_index, Channel& /*channel*/,
                                              DisplayBase display_base ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();
@@ -87,7 +87,7 @@ void I2sAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& /*channel
     }
 }
 
-void I2sAnalyzerResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 /*export_type_user_id*/ )
+void I2sTestalyserResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 /*export_type_user_id*/ )
 {
     std::stringstream ss;
     void* f = AnalyzerHelpers::StartFile( file );
@@ -159,7 +159,7 @@ void I2sAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
     AnalyzerHelpers::EndFile( f );
 }
 
-void I2sAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
+void I2sTestalyserResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
     ClearTabularText();
 
@@ -219,7 +219,7 @@ void I2sAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase 
     }
 }
 
-void I2sAnalyzerResults::GeneratePacketTabularText( U64 /*packet_id*/,
+void I2sTestalyserResults::GeneratePacketTabularText( U64 /*packet_id*/,
                                                     DisplayBase /*display_base*/ ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();
@@ -227,7 +227,7 @@ void I2sAnalyzerResults::GeneratePacketTabularText( U64 /*packet_id*/,
 }
 
 void
-    I2sAnalyzerResults::GenerateTransactionTabularText( U64 /*transaction_id*/,
+    I2sTestalyserResults::GenerateTransactionTabularText( U64 /*transaction_id*/,
                                                         DisplayBase /*display_base*/ ) // unrefereced vars commented out to remove warnings.
 {
     ClearResultStrings();

@@ -1,4 +1,4 @@
-#include "I2sAnalyzerSettings.h"
+#include "I2sTestalyserSettings.h"
 
 #include <AnalyzerHelpers.h>
 #include <sstream>
@@ -7,7 +7,7 @@
 
 #pragma warning( disable : 4996 ) // warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead.
 
-I2sAnalyzerSettings::I2sAnalyzerSettings()
+I2sTestalyserSettings::I2sTestalyserSettings()
     : mClockChannel( UNDEFINED_CHANNEL ),
       mFrameChannel( UNDEFINED_CHANNEL ),
       mDataChannel( UNDEFINED_CHANNEL ),
@@ -20,7 +20,8 @@ I2sAnalyzerSettings::I2sAnalyzerSettings()
       mFrameType( FRAME_TRANSITION_ONCE_EVERY_WORD ),
       mBitAlignment( BITS_SHIFTED_RIGHT_1 ),
       mSigned( AnalyzerEnums::UnsignedInteger ),
-      mWordSelectInverted( WS_NOT_INVERTED )
+      mWordSelectInverted( WS_NOT_INVERTED ),
+      mTestMode( TEST_DISABLED )
 {
     mClockChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
     mClockChannelInterface->SetTitleAndTooltip( "CLOCK channel", "Clock, aka I2S SCK - Continuous Serial Clock, aka Bit Clock" );
@@ -101,6 +102,12 @@ I2sAnalyzerSettings::I2sAnalyzerSettings()
                                              "when word select (FRAME) is logic 1, data is channel 1." );
     mWordSelectInvertedInterface->SetNumber( mWordSelectInverted );
 
+    mTestModeInterface.reset( new AnalyzerSettingInterfaceNumberList() );
+    mTestModeInterface->SetTitleAndTooltip( "Test mode", "Select a data test. Results will show test errors." );
+    mTestModeInterface->AddNumber(TEST_DISABLED, "No test", "normal analyser operation.");
+    mTestModeInterface->AddNumber(TEST_CONTIGUOUS, "Contiguous", "Reports errors if channel samples are not contiguous.");
+    mTestModeInterface->SetNumber( mTestMode );
+
     AddInterface( mClockChannelInterface.get() );
     AddInterface( mFrameChannelInterface.get() );
     AddInterface( mDataChannelInterface.get() );
@@ -112,6 +119,7 @@ I2sAnalyzerSettings::I2sAnalyzerSettings()
     AddInterface( mBitAlignmentInterface.get() );
     AddInterface( mSignedInterface.get() );
     AddInterface( mWordSelectInvertedInterface.get() );
+    AddInterface( mTestModeInterface.get() );
 
     // AddExportOption( 0, "Export as text/csv file", "text (*.txt);;csv (*.csv)" );
     AddExportOption( 0, "Export as text/csv file" );
@@ -124,11 +132,11 @@ I2sAnalyzerSettings::I2sAnalyzerSettings()
     AddChannel( mDataChannel, "PCM DATA", false );
 }
 
-I2sAnalyzerSettings::~I2sAnalyzerSettings()
+I2sTestalyserSettings::~I2sTestalyserSettings()
 {
 }
 
-void I2sAnalyzerSettings::UpdateInterfacesFromSettings()
+void I2sTestalyserSettings::UpdateInterfacesFromSettings()
 {
     mClockChannelInterface->SetChannel( mClockChannel );
     mFrameChannelInterface->SetChannel( mFrameChannel );
@@ -145,9 +153,11 @@ void I2sAnalyzerSettings::UpdateInterfacesFromSettings()
     mSignedInterface->SetNumber( mSigned );
 
     mWordSelectInvertedInterface->SetNumber( mWordSelectInverted );
+
+    mTestModeInterface->SetNumber( mTestMode );
 }
 
-bool I2sAnalyzerSettings::SetSettingsFromInterfaces()
+bool I2sTestalyserSettings::SetSettingsFromInterfaces()
 {
     Channel clock_channel = mClockChannelInterface->GetChannel();
     if( clock_channel == UNDEFINED_CHANNEL )
@@ -192,6 +202,8 @@ bool I2sAnalyzerSettings::SetSettingsFromInterfaces()
 
     mWordSelectInverted = PcmWordSelectInverted( U32( mWordSelectInvertedInterface->GetNumber() ) );
 
+    mTestMode = TestMode( U32 (mTestModeInterface->GetNumber() ) );
+
     // AddExportOption( 0, "Export as text/csv file", "text (*.txt);;csv (*.csv)" );
 
     ClearChannels();
@@ -202,7 +214,7 @@ bool I2sAnalyzerSettings::SetSettingsFromInterfaces()
     return true;
 }
 
-void I2sAnalyzerSettings::LoadSettings( const char* settings )
+void I2sTestalyserSettings::LoadSettings( const char* settings )
 {
     SimpleArchive text_archive;
     text_archive.SetString( settings );
@@ -234,6 +246,10 @@ void I2sAnalyzerSettings::LoadSettings( const char* settings )
     if( text_archive >> *( U32* )&word_inverted )
         mWordSelectInverted = word_inverted;
 
+    TestMode test_mode;
+    if( text_archive >> *( U32* )&test_mode )
+        mTestMode = test_mode;
+
     ClearChannels();
     AddChannel( mClockChannel, "PCM CLOCK", true );
     AddChannel( mFrameChannel, "PCM FRAME", true );
@@ -242,7 +258,7 @@ void I2sAnalyzerSettings::LoadSettings( const char* settings )
     UpdateInterfacesFromSettings();
 }
 
-const char* I2sAnalyzerSettings::SaveSettings()
+const char* I2sTestalyserSettings::SaveSettings()
 { // SaleaeI2sPcmAnalyzer
     SimpleArchive text_archive;
 
@@ -263,6 +279,8 @@ const char* I2sAnalyzerSettings::SaveSettings()
     text_archive << mSigned;
 
     text_archive << mWordSelectInverted;
+
+    text_archive << mTestMode;
 
     return SetReturnString( text_archive.GetString() );
 }

@@ -1,26 +1,26 @@
-#include "I2sAnalyzer.h"
-#include "I2sAnalyzerSettings.h"
+#include "I2sTestalyser.h"
+#include "I2sTestalyserSettings.h"
 #include <AnalyzerChannelData.h>
 
-I2sAnalyzer::I2sAnalyzer() : Analyzer2(), mSettings( new I2sAnalyzerSettings() ), mSimulationInitilized( false )
+I2sTestalyser::I2sTestalyser() : Analyzer2(), mSettings( new I2sTestalyserSettings() ), mSimulationInitilized( false )
 {
     SetAnalyzerSettings( mSettings.get() );
     UseFrameV2();
 }
 
-I2sAnalyzer::~I2sAnalyzer()
+I2sTestalyser::~I2sTestalyser()
 {
     KillThread();
 }
 
-void I2sAnalyzer::SetupResults()
+void I2sTestalyser::SetupResults()
 {
-    mResults.reset( new I2sAnalyzerResults( this, mSettings.get() ) );
+    mResults.reset( new I2sTestalyserResults( this, mSettings.get() ) );
     SetAnalyzerResults( mResults.get() );
     mResults->AddChannelBubblesWillAppearOn( mSettings->mDataChannel );
 }
 
-void I2sAnalyzer::WorkerThread()
+void I2sTestalyser::WorkerThread()
 {
     // UpArrow, DownArrow
     if( mSettings->mDataValidEdge == AnalyzerEnums::NegEdge )
@@ -47,7 +47,7 @@ void I2sAnalyzer::WorkerThread()
 }
 
 // enum PcmFrameType { FRAME_TRANSITION_TWICE_EVERY_WORD, FRAME_TRANSITION_ONCE_EVERY_WORD, FRAME_TRANSITION_TWICE_EVERY_FOUR_WORDS };
-void I2sAnalyzer::AnalyzeFrame()
+void I2sTestalyser::AnalyzeFrame()
 {
     U32 num_bits = mDataBits.size();
 
@@ -114,7 +114,7 @@ void I2sAnalyzer::AnalyzeFrame()
     }
 }
 
-void I2sAnalyzer::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subframe_index )
+void I2sTestalyser::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subframe_index )
 {
     U64 result = 0;
     U32 target_count = starting_index + num_bits;
@@ -172,7 +172,7 @@ void I2sAnalyzer::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subfram
     mResults->AddFrameV2( frame_v2, "data", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
 }
 
-void I2sAnalyzer::SetupForGettingFirstFrame()
+void I2sTestalyser::SetupForGettingFirstFrame()
 {
     GetNextBit( mLastData, mLastFrame, mLastSample ); // we have to throw away one bit to get enough history on the FRAME line.
 
@@ -200,7 +200,7 @@ void I2sAnalyzer::SetupForGettingFirstFrame()
     }
 }
 
-void I2sAnalyzer::GetFrame()
+void I2sTestalyser::GetFrame()
 {
     // on entering this function:
     // mCurrentFrame and mCurrentData are the values of the first bit -- that belongs to us -- in the frame.
@@ -249,7 +249,7 @@ void I2sAnalyzer::GetFrame()
     }
 }
 
-void I2sAnalyzer::SetupForGettingFirstBit()
+void I2sTestalyser::SetupForGettingFirstBit()
 {
     if( mSettings->mDataValidEdge == AnalyzerEnums::PosEdge )
     {
@@ -265,7 +265,7 @@ void I2sAnalyzer::SetupForGettingFirstBit()
     }
 }
 
-void I2sAnalyzer::GetNextBit( BitState& data, BitState& frame, U64& sample_number )
+void I2sTestalyser::GetNextBit( BitState& data, BitState& frame, U64& sample_number )
 {
     // we always start off here so that the next edge is where the data is valid.
     mClock->AdvanceToNextEdge();
@@ -284,7 +284,7 @@ void I2sAnalyzer::GetNextBit( BitState& data, BitState& frame, U64& sample_numbe
     mClock->AdvanceToNextEdge(); // advance one more, so we're ready for next this function is called.
 }
 
-U32 I2sAnalyzer::GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels )
+U32 I2sTestalyser::GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels )
 {
     if( mSimulationInitilized == false )
     {
@@ -295,29 +295,29 @@ U32 I2sAnalyzer::GenerateSimulationData( U64 newest_sample_requested, U32 sample
     return mSimulationDataGenerator.GenerateSimulationData( newest_sample_requested, sample_rate, simulation_channels );
 }
 
-U32 I2sAnalyzer::GetMinimumSampleRateHz()
+U32 I2sTestalyser::GetMinimumSampleRateHz()
 {
     return 4000000; // just enough for our simulation.  Ideally we would be smarter about this but we don't know the bit rate in advance.
 }
 
-bool I2sAnalyzer::NeedsRerun()
+bool I2sTestalyser::NeedsRerun()
 {
     return false;
 }
 
-const char* I2sAnalyzer::GetAnalyzerName() const
+const char* I2sTestalyser::GetAnalyzerName() const
 {
-    return "I2S / PCM";
+    return "I2S / PCM Test";
 }
 
 const char* GetAnalyzerName()
 {
-    return "I2S / PCM";
+    return "I2S / PCM Test";
 }
 
 Analyzer* CreateAnalyzer()
 {
-    return new I2sAnalyzer();
+    return new I2sTestalyser();
 }
 
 void DestroyAnalyzer( Analyzer* analyzer )
