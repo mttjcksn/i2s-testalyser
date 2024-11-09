@@ -121,8 +121,7 @@ def start_server(host, port, capture, stop_event):
                                 elif value1 == 0 and value2 == 1234:
                                     print("Connected!")
                                 else:
-                                    ppmmin, ppmmax = calculate_ppm(value1*2, value2*2, 500000000, 3072000)
-                                    print(f"Log received ppm: min: {ppmmin}, max: {ppmmax}")
+                                    print(f"Log received ppm: min: {value1}, max: {value2}")
                                     
                             except ValueError as e:
                                 print(f"Deserialization error: {e}")
@@ -136,20 +135,6 @@ def deserialize(data):
     if len(data) != 16:
         raise ValueError("Data must be exactly 16 bytes long.")
     return struct.unpack('<QQ', data)  # '<QQ' specifies little-endian, two uint64s
-
-def calculate_ppm(min_samples, max_samples, sample_rate, clock_frequency):
-    # Convert min and max intervals to time (in seconds)
-    min_time = min_samples / sample_rate
-    max_time = max_samples / sample_rate
-    
-    # Calculate the nominal interval based on the clock frequency
-    nominal_interval = 1 / clock_frequency
-    
-    # Calculate the PPM deviation for min and max intervals
-    min_ppm = ((min_time - nominal_interval) / nominal_interval) * 1_000_000
-    max_ppm = ((max_time - nominal_interval) / nominal_interval) * 1_000_000
-    
-    return min_ppm, max_ppm
 
 if __name__ == "__main__":
     main()

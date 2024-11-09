@@ -157,34 +157,51 @@ class TestExtension
 
     void setDataValidEdge( uint64_t sampleNumber )
     {
-        mDataValidEdgeSample = sampleNumber;
+        // We want to detect movements in the clock of +/- 1ppm.
+        // With a analyser sample rate of 500000000, that requires timing the clock edges 500 times per second.
+        // With a sample rate of 48000, 500 times per second equates to once every 96 frames: 500000000 / (48000/96).
+        // Therefore, we output the delta between the  measured number of samples between FS clk edge every 96 samples, and 1000000.
+
+        if(edgeCount >= (96*32*2)-1)
+        {
+            U64 clockDelta = sampleNumber - mDataValidEdgeSample;
+            mDataValidEdgeSample = sampleNumber;
+            edgeCount = 0;
+
+            mClockMinInterval = std::min( mClockMinInterval, clockDelta );
+            mClockMaxInterval = std::max( mClockMaxInterval, clockDelta );
+            mStatsUpdateCount++;
+            if( mStatsUpdateCount >= mStatsUpdateInterval )
+            {
+                mStatsUpdateCount = 0;
+                if( mTestServerConnected )
+                {
+                    mTestServer.update( mClockMinInterval, mClockMaxInterval );
+                }
+                mClockMinInterval = std::numeric_limits<U64>::max();
+                mClockMaxInterval = 0;
+            }
+        }
+        else
+        {
+            edgeCount++;
+        }
     }
 
     void setDataTransitionEdge( uint64_t sampleNumber )
     {
-        U64 clockDelta = sampleNumber - mDataValidEdgeSample;
-        mClockMinInterval = std::min( mClockMinInterval, clockDelta );
-        mClockMaxInterval = std::max( mClockMaxInterval, clockDelta );
-        mStatsUpdateCount++;
-
-        if( mStatsUpdateCount >= mStatsUpdateInterval )
-        {
-            mStatsUpdateCount = 0;
-            if( mTestServerConnected )
-            {
-                mTestServer.update( clockDelta, mClockMaxInterval );
-            }
-        }
     }
 
   protected:
     U64 mClockMinInterval = std::numeric_limits<U64>::max();
     U64 mClockMaxInterval = 0;
-    U32 mStatsUpdateInterval = 48000 * 32;
+    U32 mStatsUpdateInterval = 500;
     U32 mStatsUpdateCount = 0;
     std::vector<U32> mTestExpectedResults;
     std::vector<bool> mTestChannelPrimed;
     TestServer mTestServer;
     bool mTestServerConnected = false;
+
     uint64_t mDataValidEdgeSample = 0;
+    uint32_t edgeCount = 0;
 };
