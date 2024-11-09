@@ -4,7 +4,6 @@
 #include <Analyzer.h>
 #include "I2sTestalyserResults.h"
 #include "I2sSimulationDataGenerator.h"
-#include "TestServer.hpp"
 
 class I2sTestalyserSettings;
 class I2sTestalyser : public Analyzer2
@@ -56,14 +55,7 @@ class I2sTestalyser : public Analyzer2
     std::vector<BitState> mDataBits;
     std::vector<U64> mDataValidEdges;
 
-    U64 mClockMinInterval;
-    U64 mClockMaxInterval;
-    U32 mStatsUpdateInterval = 48000*32;
-    U32 mStatsUpdateCount = 0;
-    std::vector<U32> mTestExpectedResults;
-    std::vector<bool> mTestChannelPrimed;
-    TestServer mTestServer;
-    bool mTestServerConnected = false;
+    TestExtension mTest;
 
 #pragma warning( pop )
 };

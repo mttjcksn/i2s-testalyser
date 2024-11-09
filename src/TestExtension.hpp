@@ -3,7 +3,13 @@
 #include <AnalyzerSettings.h>
 #include <AnalyzerTypes.h>
 #include <AnalyzerHelpers.h>
+#include "TestServer.hpp"
+
 #include <memory>
+#include <algorithm>
+#include <string>
+#include <limits>
+
 
 enum TestMode
 {
@@ -80,4 +86,105 @@ class TestExtensionSettings
 
     std::unique_ptr<AnalyzerSettingInterfaceNumberList> mTestModeInterface;
     std::unique_ptr<AnalyzerSettingInterfaceBool> mUseTestServerInterface;
+};
+
+class TestExtension
+{
+  public:
+    TestExtension() {};
+
+    ~TestExtension() = default;
+
+    void setup( int channelCount, TestExtensionSettings& pSettings )
+    {
+        mTestChannelPrimed.clear();
+        mTestExpectedResults.clear();
+        mTestChannelPrimed.assign( channelCount, false );
+        mTestExpectedResults.assign( channelCount, 0 );
+
+        mClockMinInterval = std::numeric_limits<U64>::max();
+        mClockMaxInterval = 0;
+        mStatsUpdateCount = 0;
+
+        if( pSettings.mUseTestServer && !mTestServerConnected )
+        {
+            mTestServerConnected = mTestServer.connect();
+        }
+    }
+
+    /**
+     * @brief
+     *
+     * @param pSettings
+     * @param subframeIndex
+     * @param channel
+     * @param value
+     * @return true if error
+     * @return false if no error
+     */
+    bool process( TestExtensionSettings& settings, int channel, int value )
+    {
+        if( settings.mTestMode != TestMode::TEST_CONTIGUOUS )
+        {
+            return false;
+        }
+
+        if( value != ( mTestExpectedResults.at( channel ) ) )
+        {
+            if( mTestChannelPrimed.at( channel ) )
+            {
+                // The test is now unpredictable, allow the next sample to reset the test position
+                mTestChannelPrimed.at( channel ) = false;
+                mTestServer.error();
+                return true;
+            }
+            else
+            {
+                // We now have 1 samples to test against
+                mTestChannelPrimed.at( channel ) = true;
+            }
+        }
+        else
+        {
+            // We now have 1 samples to test against
+            mTestChannelPrimed.at( channel ) = true;
+        }
+
+        mTestExpectedResults.at( channel ) = value + 1;
+
+        return false;
+    }
+
+    void setDataValidEdge( uint64_t sampleNumber )
+    {
+        mDataValidEdgeSample = sampleNumber;
+    }
+
+    void setDataTransitionEdge( uint64_t sampleNumber )
+    {
+        U64 clockDelta = sampleNumber - mDataValidEdgeSample;
+        mClockMinInterval = std::min( mClockMinInterval, clockDelta );
+        mClockMaxInterval = std::max( mClockMaxInterval, clockDelta );
+        mStatsUpdateCount++;
+
+        if( mStatsUpdateCount >= mStatsUpdateInterval )
+        {
+            mStatsUpdateCount = 0;
+            if( mTestServerConnected )
+            {
+                mTestServer.update( clockDelta, mClockMaxInterval );
+            }
+        }
+    }
+
+  protected:
+    U64 mClockMinInterval = std::numeric_limits<U64>::max();
+    U64 mClockMaxInterval = 0;
+    U32 mStatsUpdateInterval = 48000 * 32;
+    U32 mStatsUpdateCount = 0;
+    std::vector<U32> mTestExpectedResults;
+    std::vector<bool> mTestChannelPrimed;
+    TestServer mTestServer;
+    bool mTestServerConnected = false;
+    uint64_t mDataValidEdgeSample = 0;
 };
