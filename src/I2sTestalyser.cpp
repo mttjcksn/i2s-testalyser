@@ -1,11 +1,17 @@
 #include "I2sTestalyser.h"
 #include "I2sTestalyserSettings.h"
 #include <AnalyzerChannelData.h>
+#include <algorithm>
+#include <string>
+#include <limits>
 
 I2sTestalyser::I2sTestalyser() : Analyzer2(), mSettings( new I2sTestalyserSettings() ), mSimulationInitilized( false )
 {
     SetAnalyzerSettings( mSettings.get() );
     UseFrameV2();
+    mClockMinInterval = std::numeric_limits<U64>::max();
+    mClockMaxInterval = 0;
+    mStatsUpdateCount = 0;
 }
 
 I2sTestalyser::~I2sTestalyser()
@@ -22,6 +28,11 @@ void I2sTestalyser::SetupResults()
 
 void I2sTestalyser::WorkerThread()
 {
+    mTestChannelPrimed.clear();
+    mTestExpectedResults.clear();
+    mTestChannelPrimed.assign(mSettings->GetChannelsCount(), false);
+    mTestExpectedResults.assign(mSettings->GetChannelsCount(), 0);
+
     // UpArrow, DownArrow
     if( mSettings->mDataValidEdge == AnalyzerEnums::NegEdge )
         mArrowMarker = AnalyzerResults::DownArrow;
@@ -34,6 +45,15 @@ void I2sTestalyser::WorkerThread()
 
     SetupForGettingFirstBit();
     SetupForGettingFirstFrame();
+
+    mClockMinInterval = std::numeric_limits<U64>::max();
+    mClockMaxInterval = 0;
+    mStatsUpdateCount = 0;
+
+    if(mSettings->mUseTestServer && !mTestServerConnected)
+    {
+        mTestServerConnected = mTestServer.connect();
+    }
 
     for( ;; )
     {
@@ -142,55 +162,76 @@ void I2sTestalyser::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subfr
         }
     }
 
-    static U64 expectedResult0 = 0;
-    static U64 expectedResult1 = 1;
+    /////////////////// TEST //////////////////////////////
     if( mSettings->mTestMode == TestMode::TEST_CONTIGUOUS )
     {
-        if( result != (subframe_index ? expectedResult1 : expectedResult0))
+
+        int channel = subframe_index & 0x0001;
+        if(result != (mTestExpectedResults.at(channel)))
         {
-            Frame frame;
-            frame.mType = U8( TestError );
-            frame.mFlags = DISPLAY_AS_ERROR_FLAG;
-            frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
-            frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
-            mResults->AddFrame( frame );
-            FrameV2 frame_v2;
-            frame_v2.AddString( "error", "Not contiguous!" );
-            mResults->AddFrameV2( frame_v2, "error", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
-            subframe_index ? expectedResult1+=2 : expectedResult0+=2;
-            return;
+            // If it was an error
+            if(mTestChannelPrimed.at(channel))
+            {
+                Frame frame;
+                frame.mType = U8( TestError );
+                frame.mFlags = DISPLAY_AS_ERROR_FLAG;
+                frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
+                frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
+                mResults->AddFrame( frame );
+                FrameV2 frame_v2;
+                frame_v2.AddString( "error", "Not contiguous!" );
+                mResults->AddFrameV2( frame_v2, "error", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
+                // The test is now unpredictable, allow the next sample to reset the test position
+                mTestChannelPrimed.at(channel) = false;
+                mTestServer.error();
+                return;
+            }
+            else
+            {
+                // We now have 1 samples to test against
+                mTestChannelPrimed.at(channel) = true;
+            }
         }
-        subframe_index ? expectedResult1++ : expectedResult0++;
+        else
+        {
+            // We now have 1 samples to test against
+            mTestChannelPrimed.at(channel) = true;
+        }
+        
+        mTestExpectedResults.at(channel) = result+1;
     }
-
-    // enum I2sResultType { Channel1, Channel2, ErrorTooFewBits, ErrorDoesntDivideEvenly };
-    // add result bubble
-    Frame frame;
-    frame.mData1 = result;
-
-    U32 channel_1_polarity = 1;
-    if( mSettings->mWordSelectInverted == WS_INVERTED )
-        channel_1_polarity = 0;
-
-    if( ( subframe_index & 0x1 ) == channel_1_polarity )
-        frame.mType = U8( Channel1 );
     else
-        frame.mType = U8( Channel2 );
-
-    frame.mFlags = 0;
-    frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
-    frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
-
-    mResults->AddFrame( frame );
-    FrameV2 frame_v2;
-    frame_v2.AddInteger( "channel", frame.mType );
-    S64 adjusted_value = result;
-    if( mSettings->mSigned == AnalyzerEnums::SignedInteger )
     {
-        adjusted_value = AnalyzerHelpers::ConvertToSignedNumber( frame.mData1, mSettings->mBitsPerWord );
+        // enum I2sResultType { Channel1, Channel2, ErrorTooFewBits, ErrorDoesntDivideEvenly };
+        // add result bubble
+        Frame frame;
+        frame.mData1 = result;
+
+        U32 channel_1_polarity = 1;
+        if( mSettings->mWordSelectInverted == WS_INVERTED )
+            channel_1_polarity = 0;
+
+        if( ( subframe_index & 0x1 ) == channel_1_polarity )
+            frame.mType = U8( Channel1 );
+        else
+            frame.mType = U8( Channel2 );
+
+        frame.mFlags = 0;
+        frame.mStartingSampleInclusive = mDataValidEdges[ starting_index ];
+        frame.mEndingSampleInclusive = mDataValidEdges[ starting_index + num_bits - 1 ];
+
+        mResults->AddFrame( frame );
+        FrameV2 frame_v2;
+        frame_v2.AddInteger( "channel", frame.mType );
+        S64 adjusted_value = result;
+        if( mSettings->mSigned == AnalyzerEnums::SignedInteger )
+        {
+            adjusted_value = AnalyzerHelpers::ConvertToSignedNumber( frame.mData1, mSettings->mBitsPerWord );
+        }
+        frame_v2.AddInteger( "data", adjusted_value );
+        mResults->AddFrameV2( frame_v2, "data", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
     }
-    frame_v2.AddInteger( "data", adjusted_value );
-    mResults->AddFrameV2( frame_v2, "data", frame.mStartingSampleInclusive, frame.mEndingSampleInclusive );
+
 }
 
 void I2sTestalyser::SetupForGettingFirstFrame()
@@ -303,6 +344,20 @@ void I2sTestalyser::GetNextBit( BitState& data, BitState& frame, U64& sample_num
     mResults->AddMarker( data_valid_sample, mArrowMarker, mSettings->mClockChannel );
 
     mClock->AdvanceToNextEdge(); // advance one more, so we're ready for next this function is called.
+
+    U64 clockDelta = mClock->GetSampleNumber() - data_valid_sample;
+    mClockMinInterval = std::min(mClockMinInterval, clockDelta);
+    mClockMaxInterval = std::max(mClockMaxInterval, clockDelta);
+    mStatsUpdateCount++;
+
+    if(mStatsUpdateCount >= mStatsUpdateInterval)
+    {
+        mStatsUpdateCount = 0;
+        if(mTestServerConnected)
+        {
+            mTestServer.update(clockDelta, mClockMaxInterval);
+        }
+    }
 }
 
 U32 I2sTestalyser::GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels )

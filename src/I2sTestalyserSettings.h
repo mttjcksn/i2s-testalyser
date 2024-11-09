@@ -58,6 +58,7 @@ class I2sTestalyserSettings : public AnalyzerSettings
     PcmWordSelectInverted mWordSelectInverted;
 
     TestMode mTestMode;
+    bool mUseTestServer;
 
   protected:
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mClockChannelInterface;
@@ -77,4 +78,5 @@ class I2sTestalyserSettings : public AnalyzerSettings
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mWordSelectInvertedInterface;
 
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mTestModeInterface;
+    std::auto_ptr<AnalyzerSettingInterfaceBool> mUseTestServerInterface;
 };

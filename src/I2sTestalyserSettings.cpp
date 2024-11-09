@@ -21,7 +21,8 @@ I2sTestalyserSettings::I2sTestalyserSettings()
       mBitAlignment( BITS_SHIFTED_RIGHT_1 ),
       mSigned( AnalyzerEnums::UnsignedInteger ),
       mWordSelectInverted( WS_NOT_INVERTED ),
-      mTestMode( TEST_DISABLED )
+      mTestMode( TEST_DISABLED ),
+      mUseTestServer( false )
 {
     mClockChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
     mClockChannelInterface->SetTitleAndTooltip( "CLOCK channel", "Clock, aka I2S SCK - Continuous Serial Clock, aka Bit Clock" );
@@ -108,6 +109,10 @@ I2sTestalyserSettings::I2sTestalyserSettings()
     mTestModeInterface->AddNumber(TEST_CONTIGUOUS, "Contiguous", "Reports errors if channel samples are not contiguous.");
     mTestModeInterface->SetNumber( mTestMode );
 
+    mUseTestServerInterface.reset( new AnalyzerSettingInterfaceBool() );
+    mUseTestServerInterface->SetTitleAndTooltip( "Use test server", "Use the custom i2s test server to log clock stats and control automation" );
+    mUseTestServerInterface->SetValue( mUseTestServer );
+
     AddInterface( mClockChannelInterface.get() );
     AddInterface( mFrameChannelInterface.get() );
     AddInterface( mDataChannelInterface.get() );
@@ -120,6 +125,7 @@ I2sTestalyserSettings::I2sTestalyserSettings()
     AddInterface( mSignedInterface.get() );
     AddInterface( mWordSelectInvertedInterface.get() );
     AddInterface( mTestModeInterface.get() );
+    AddInterface( mUseTestServerInterface.get() );
 
     // AddExportOption( 0, "Export as text/csv file", "text (*.txt);;csv (*.csv)" );
     AddExportOption( 0, "Export as text/csv file" );
@@ -155,6 +161,7 @@ void I2sTestalyserSettings::UpdateInterfacesFromSettings()
     mWordSelectInvertedInterface->SetNumber( mWordSelectInverted );
 
     mTestModeInterface->SetNumber( mTestMode );
+    mUseTestServerInterface->SetValue( mUseTestServer );
 }
 
 bool I2sTestalyserSettings::SetSettingsFromInterfaces()
@@ -203,6 +210,7 @@ bool I2sTestalyserSettings::SetSettingsFromInterfaces()
     mWordSelectInverted = PcmWordSelectInverted( U32( mWordSelectInvertedInterface->GetNumber() ) );
 
     mTestMode = TestMode( U32 (mTestModeInterface->GetNumber() ) );
+    mUseTestServer = mUseTestServerInterface->GetValue();
 
     // AddExportOption( 0, "Export as text/csv file", "text (*.txt);;csv (*.csv)" );
 
@@ -250,6 +258,10 @@ void I2sTestalyserSettings::LoadSettings( const char* settings )
     if( text_archive >> *( U32* )&test_mode )
         mTestMode = test_mode;
 
+    bool test_server;
+    if( text_archive >> *( U32* )&test_server )
+        mUseTestServer = test_server;
+
     ClearChannels();
     AddChannel( mClockChannel, "PCM CLOCK", true );
     AddChannel( mFrameChannel, "PCM FRAME", true );
@@ -281,6 +293,8 @@ const char* I2sTestalyserSettings::SaveSettings()
     text_archive << mWordSelectInverted;
 
     text_archive << mTestMode;
+
+    text_archive << mUseTestServer;
 
     return SetReturnString( text_archive.GetString() );
 }

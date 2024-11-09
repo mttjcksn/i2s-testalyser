@@ -140,3 +140,9 @@ I2S decode error
 
 A single sample from a single channel
 
+### Running
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r automation/requirements.txt
+python ./automation/run-test.py --device 8EE08D4C3E59B037    
