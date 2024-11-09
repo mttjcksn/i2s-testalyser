@@ -113,7 +113,7 @@ I2sTestalyserSettings::I2sTestalyserSettings()
     AddInterface( mWordSelectInvertedInterface.get() );
 
     // TEST_EXTENSION: Add setting interfaces from test
-    for(auto& pInterface: mTestSettings.getSettingInterfaces())
+    for( auto& pInterface : mTestSettings.getSettingInterfaces() )
     {
         AddInterface( pInterface );
     }
@@ -247,7 +247,7 @@ void I2sTestalyserSettings::LoadSettings( const char* settings )
         mWordSelectInverted = word_inverted;
 
     // TEST_EXTENSION
-    mTestSettings.LoadSettings(text_archive);
+    mTestSettings.LoadSettings( text_archive );
 
     ClearChannels();
     AddChannel( mClockChannel, "PCM CLOCK", true );
@@ -280,7 +280,7 @@ const char* I2sTestalyserSettings::SaveSettings()
     text_archive << mWordSelectInverted;
 
     // TEST_EXTENSION
-    mTestSettings.SaveSettings(text_archive);
+    mTestSettings.SaveSettings( text_archive );
 
     return SetReturnString( text_archive.GetString() );
 }
