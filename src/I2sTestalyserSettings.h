@@ -2,6 +2,7 @@
 
 #include <AnalyzerSettings.h>
 #include <AnalyzerTypes.h>
+#include "TestExtension.hpp"
 
 enum PcmFrameType
 {
@@ -23,11 +24,6 @@ enum PcmWordSelectInverted
 {
     WS_INVERTED,
     WS_NOT_INVERTED
-};
-enum TestMode
-{
-    TEST_DISABLED,
-    TEST_CONTIGUOUS
 };
 
 class I2sTestalyserSettings : public AnalyzerSettings
@@ -57,8 +53,8 @@ class I2sTestalyserSettings : public AnalyzerSettings
 
     PcmWordSelectInverted mWordSelectInverted;
 
-    TestMode mTestMode;
-    bool mUseTestServer;
+    // TEST_EXTENSION
+    TestExtensionSettings mTestSettings;
 
   protected:
     std::auto_ptr<AnalyzerSettingInterfaceChannel> mClockChannelInterface;
@@ -76,7 +72,4 @@ class I2sTestalyserSettings : public AnalyzerSettings
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mSignedInterface;
 
     std::auto_ptr<AnalyzerSettingInterfaceNumberList> mWordSelectInvertedInterface;
-
-    std::auto_ptr<AnalyzerSettingInterfaceNumberList> mTestModeInterface;
-    std::auto_ptr<AnalyzerSettingInterfaceBool> mUseTestServerInterface;
 };

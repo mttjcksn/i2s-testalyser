@@ -50,7 +50,7 @@ void I2sTestalyser::WorkerThread()
     mClockMaxInterval = 0;
     mStatsUpdateCount = 0;
 
-    if(mSettings->mUseTestServer && !mTestServerConnected)
+    if(mSettings->mTestSettings.mUseTestServer && !mTestServerConnected)
     {
         mTestServerConnected = mTestServer.connect();
     }
@@ -163,7 +163,7 @@ void I2sTestalyser::AnalyzeSubFrame( U32 starting_index, U32 num_bits, U32 subfr
     }
 
     /////////////////// TEST //////////////////////////////
-    if( mSettings->mTestMode == TestMode::TEST_CONTIGUOUS )
+    if( mSettings->mTestSettings.mTestMode == TestMode::TEST_CONTIGUOUS )
     {
 
         int channel = subframe_index & 0x0001;
